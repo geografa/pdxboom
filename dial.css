@@ -1,0 +1,109 @@
+* {
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+.dial {
+  position: relative;
+  display: block;
+  margin: 25px;
+}
+
+.dial-1, .dial-2 {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  display: block;
+  height: 150px;
+  width: 150px;
+}
+
+.dial-2 {
+  -moz-transform: rotate(45deg);
+  -ms-transform: rotate(45deg);
+  -webkit-transform: rotate(45deg);
+  transform: rotate(45deg);
+}
+
+.dial-1 > a, .dial-2 > a {
+  position: absolute;
+  color: #fff;
+  display: block;
+  height: 50px;
+  width: 50px;
+  -moz-border-radius: 25px;
+  -webkit-border-radius: 25px;
+  border-radius: 25px;
+  text-align: center;
+  background: #333;
+  padding: 17px 0px;
+  text-decoration: none;
+  font-size: 1em;
+  font-family: 'Helvetica';
+}
+.dial-1 > a:nth-child(1), .dial-2 > a:nth-child(1) {
+  left: 0px;
+  top: 0px;
+}
+.dial-1 > a:nth-child(2), .dial-2 > a:nth-child(2) {
+  right: 0px;
+  top: 0px;
+}
+.dial-1 > a:nth-child(3), .dial-2 > a:nth-child(3) {
+  right: 0px;
+  bottom: 0px;
+}
+.dial-1 > a:nth-child(4), .dial-2 > a:nth-child(4) {
+  left: 0px;
+  bottom: 0px;
+}
+
+.dial-2 > a {
+  -moz-transform: rotate(-45deg);
+  -ms-transform: rotate(-45deg);
+  -webkit-transform: rotate(-45deg);
+  transform: rotate(-45deg);
+}
+
+.dial-circle {
+  display: block;
+  height: 80px;
+  width: 80px;
+  -moz-border-radius: 75px;
+  -webkit-border-radius: 75px;
+  border-radius: 75px;
+  position: absolute;
+  top: 35px;
+  left: 35px;
+  opacity: 0.7;
+  background: #333;
+  -moz-transition-property: all;
+  -o-transition-property: all;
+  -webkit-transition-property: all;
+  transition-property: all;
+  -moz-transition-duration: 1s;
+  -o-transition-duration: 1s;
+  -webkit-transition-duration: 1s;
+  transition-duration: 1s;
+  opacity: 0.7;
+}
+.dial-circle:after {
+    content: '';
+    position: absolute;
+    top: -26px;
+    left: 50%;
+    margin-left: -12px;
+    width: 0px;
+    height: 0px;
+    border-style: solid;
+    border-width: 0px 13px 24px 12px;
+    border-color: transparent transparent red transparent;
+}
+#one {
+  display: none;
+}
+#one:target {
+  display: block;
+}
+.container {visibility: hidden;}
