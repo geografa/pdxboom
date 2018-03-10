@@ -64,8 +64,27 @@ var geoLocator = new mapboxgl.GeolocateControl({
     trackUserLocation: true
 });
 
-navigator.geolocation.getCurrentPosition(function() {
-  showButton();
+var x = document.getElementById("demo");
+
+navigator.geolocation.getCurrentPosition(success, error);
+
+function success () {
+    geoLocator._onClickGeolocate(alert('Use your phone\'s position or center the maps on a new location. Then click "Let\'s go!"'))
+    showButton();
+}
+
+function error() {
+    console.log("Unable to retrieve your location");;
+}
+
+var goButton = document.getElementById('letsgo');
+
+function showButton() {
+    goButton.style.display = "block";
+}
+
+goButton.addEventListener('click', function () {
+    updatePosition();
 });
 
 map.addControl(geoLocator);
@@ -121,22 +140,6 @@ function getPoints(callback) {
         callback(allPoints);
     });
 }
-
-var goButton = document.getElementById('letsgo');
-
-function showButton() {
-    // var goButton = document.getElementById("letsgo");
-    // if (goButton.style.display === "none") {
-    //     goButton.style.display = "block";
-    // } else {
-    //     goButton.style.display = "none";
-    // }
-    goButton.style.display = "block";
-}
-
-goButton.addEventListener('click', function () {
-    updatePosition();
-});
 
 </script>
 
