@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title>Let's Meet Here!</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.0/mapbox-gl.css' rel='stylesheet' />
+    <script src='https://npmcdn.com/@turf/turf/turf.min.js'></script>
+
+    <style>
+        body { margin:0; padding:0; }
+        #map { position:absolute; top:0; bottom:0; width:100%; }
+    </style>
+</head>
+<body>
+<script src="https://www.gstatic.com/firebasejs/4.9.1/firebase.js"></script>
+<div id='map'></div>
+<script>
+  // Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyCHXst0VonXAtT1uGKEVFZOvYYkw1oae2E",
+    authDomain: "pickup-97212.firebaseapp.com",
+    databaseURL: "https://pickup-97212.firebaseio.com",
+    projectId: "pickup-97212",
+    storageBucket: "",
+    messagingSenderId: "860327677665"
+  };
+  firebase.initializeApp(config);
+</script>
+<script>
+mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JhZmEiLCJhIjoiY2plbG01aDR1MGRmdDJ3a2hyampoZGQzeSJ9.d4TmB98WL1tY4n-IwcYBuw';
+var map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/grafa/cjelpx5o33ohe2so4xjefaisv',
+    center: [-122.67773866653444,45.52245801087795],
+    zoom: 13
+});
+
+map.on('load', function() {
+    map.addLayer({
+        "id": "all-points",
+        "source": {
+            "type": "geojson",
+            "data": {
+                "type": "FeatureCollection",
+                "features": []
+            }
+        },
+        "type": "symbol",
+        "layout": {
+            "icon-image": "dot-cyan",
+            "icon-size": 1
+        },
+        "paint": {
+            "icon-opacity": 0.7
+        }
+    })
+
+    map.addLayer({
+        "id": "center-point",
+        "source": {
+            "type": "geojson",
+            "data": {
+                "type": "FeatureCollection",
+                "features": []
+            }
+        },
+        "type": "symbol",
+        "layout": {
+            "icon-image": "boom",
+            "icon-size": 0.5
+        }
+    })
+
+    getPoints(setAllPoints);
+    getPoints(setCenter);
+});
+
+var dbRef = firebase.database().ref().child('features');
+
+// set the point markers
+function setCenter(allPoints) {
+    var fc = turf.featureCollection(allPoints);
+    var center = turf.center(fc);
+    map.getSource('center-point').setData(center);
+    var bbox = turf.bbox(fc);
+    map.fitBounds(bbox);
+};
+
+// set the point markers
+function setAllPoints(allPoints) {
+    var fc = turf.featureCollection(allPoints);
+    map.getSource('all-points').setData(fc);
+};
+
+// call firebase to collect points
+function getPoints(callback) {
+    var allPoints = [];
+    dbRef.on('value', function (snapshot) {
+        snapshot.forEach(function(childSnapshot) {
+            // childData will be the actual contents of the child
+            var pts = childSnapshot.val();
+            allPoints.push(pts[0])
+        });
+        callback(allPoints);
+    })
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title>Set address</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.0/mapbox-gl.css' rel='stylesheet' />
+    <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.2.0/mapbox-gl-geocoder.min.js'></script>
+<link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.2.0/mapbox-gl-geocoder.css' type='text/css' />
+    <script src='https://npmcdn.com/@turf/turf/turf.min.js'></script>
+    <script src="https://www.gstatic.com/firebasejs/4.9.1/firebase.js"></script>
+    <style>
+        body { margin:0; padding:0; }
+        #map { position:absolute; top:0; bottom:0; width:100%; }
+    </style>
+</head>
+<body>
+
+<script>
+  // Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyCHXst0VonXAtT1uGKEVFZOvYYkw1oae2E",
+    authDomain: "pickup-97212.firebaseapp.com",
+    databaseURL: "https://pickup-97212.firebaseio.com",
+    projectId: "pickup-97212",
+    storageBucket: "",
+    messagingSenderId: "860327677665"
+  };
+  firebase.initializeApp(config);
+</script>
+
+<div id='map'></div>
+<div class='calculation-box'>
+    <p>Reports added: </p>
+    <div id='calc-points'></div>
+</div>
+
+<script>
+mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JhZmEiLCJhIjoiY2plbG01aDR1MGRmdDJ3a2hyampoZGQzeSJ9.d4TmB98WL1tY4n-IwcYBuw';
+var map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/grafa/cjellxna43ktq2sn71059ot1f',
+    center: [-122.67773866653444,45.52245801087795],
+    zoom: 13
+});
+
+var geocoder = new MapboxGeocoder({
+    accessToken: mapboxgl.accessToken
+});
+
+map.addControl(geocoder);
+
+map.addControl(new mapboxgl.GeolocateControl({
+    positionOptions: {
+        enableHighAccuracy: true
+    },
+    trackUserLocation: true
+}));
+
+// After the map style has loaded on the page, add a source layer and default
+// styling for a single point.
+
+var popup = new mapboxgl.Popup();
+
+map.on('load', function() {
+    map.addLayer({
+        "id": "single-point",
+        "source": {
+            "type": "geojson",
+            "data": {
+                "type": "FeatureCollection",
+                "features": []
+            }
+        },
+        "type": "symbol",
+        "layout": {
+            "icon-image": "dir-e",
+            "icon-size": 0.5
+        }
+    });
+
+    // Listen for the `geocoder.input` event that is triggered when a user
+    // makes a selection and add a symbol that matches the result.
+    geocoder.on('result', function(ev) {
+        map.getSource('single-point').setData(ev.result.geometry);
+
+        var coords = ev.result.geometry.coordinates.slice();
+        var description = '<h3>Look right?</h3> <br><button onClick="updatePosition()" >Submit</button>';
+        popup
+            .setLngLat(coords)
+            .setHTML(description);
+        popup.addTo(map);
+
+	    // Change the cursor to a pointer when the mouse is over the places layer.
+	    map.on('mouseenter', 'point', function () {
+	        map.getCanvas().style.cursor = 'pointer';
+	    });
+
+	    // Change it back to a pointer when it leaves.
+	    map.on('mouseleave', 'point', function () {
+	        map.getCanvas().style.cursor = '';
+	    });
+    });
+
+    map.on('click', 'single-point', function (e) {
+        var coordinates = e.features[0].geometry.coordinates.slice();
+        var description = '<h3>Look right?</h3> <br><button onClick="updatePosition()" >Submit</button>';
+        console.log(description);
+
+        popup
+            .setLngLat(coordinates)
+            .setHTML(description);
+        
+        popup.addTo(map);
+        
+        // Change the cursor to a pointer when the mouse is over the places layer.
+        map.on('mouseenter', 'places', function () {
+            map.getCanvas().style.cursor = 'pointer';
+        });
+
+        // Change it back to a pointer when it leaves.
+        map.on('mouseleave', 'places', function () {
+            map.getCanvas().style.cursor = '';
+        });
+    });
+});
+
+var dbRef = firebase.database().ref().child('features');
+
+function updatePosition() {
+    var dot = map.getSource('single-point')._data;
+    var feature = turf.feature(dot);
+    console.log(feature);
+    // getPoints(setAllPoints);
+    dbRef.push([feature]);
+    popup.remove();
+}
+
+// set the point markers
+function setAllPoints(allPoints) {
+    var pts = turf.featureCollection(allPoints);
+    map.getSource('single-point').setData(pts);
+};
+
+// call firebase to collect points
+function getPoints(callback) {
+    dbRef.on('child_added', function(snapshot) {
+        var allPoints = snapshot.val();
+        callback(allPoints);        
+        var answer = document.getElementById('calc-points');
+            if (allPoints.length > 0) {
+                var numPts = allPoints.length;
+                answer.innerHTML = numPts;
+            } else {
+                answer.innerHTML = '';
+                if (e.type !== 'draw.delete') alert("Use the draw tool to draw points!");
+            }
+    });
+}
+
+</script>
+
+</body>
+</html>
