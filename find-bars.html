@@ -18,7 +18,7 @@
 </head>
 <body>
 <style>
-.btn-left {
+.btn-1 {
     font: bold 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
     background-color: #3386c0;
     color: #fff;
@@ -34,7 +34,7 @@
     border-radius: 3px;
 }
 
-.btn-right {
+.btn-2 {
     font: bold 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
     background-color: #3386c0;
     color: #fff;
@@ -50,13 +50,30 @@
     border-radius: 3px;
 }
 
+.btn-3 {
+    font: bold 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+    background-color: #3386c0;
+    color: #fff;
+    position: absolute;
+    top: 140px;
+    left: 10px;
+    z-index: 1;
+    border: none;
+    width: 200px;
+    display: block;
+    cursor: pointer;
+    padding: 10px 20px;
+    border-radius: 3px;
+}
+
 .btn-control:hover {
     background-color: #4ea0da;
 }
 </style>
 <div id='map'></div>
-<button id='getbars' class='btn-right'>Get Bars</nav>
-<button id='zoomto' class='btn-left'>See friends</nav>
+<button id='getbars' class='btn-1'>Get Bars</nav>
+<button id='zoomto' class='btn-2'>See friends</nav>
+<button id='getloc' class='btn-3'>Get Location</nav>
 
 <!-- jQuery is required for this example. -->
 <script src='https://code.jquery.com/jquery-1.11.0.min.js'></script>
@@ -78,7 +95,7 @@ firebase.initializeApp(config);
 mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JhZmEiLCJhIjoiY2oxbnJkOHlpMDB2eTJ3a2EyaW8zYTg3NyJ9.KpattAxL6iFzfpxt5rFrVw';
 var map = new mapboxgl.Map({
 	container: 'map',
-	style: 'mapbox://styles/grafa/cjelpx5o33ohe2so4xjefaisv',
+    style: 'mapbox://styles/grafa/cjelpx5o33ohe2so4xjefaisv',
 	center: [-122.67773866653444,45.52245801087795],
 	zoom: 10
 });
@@ -90,12 +107,12 @@ var geoLocator = new mapboxgl.GeolocateControl({
     trackUserLocation: true
 });
 
-navigator.geolocation.getCurrentPosition(success, error);
-
-function success () {
-    // locate the user and then get the FS venues
-    geoLocator._onClickGeolocate(updatePosition());
-}
+// function success () {
+//     // locate the user and then get the FS venues
+//     geoLocator._onClickGeolocate(function () {
+//         updatePosition();
+//     });
+// }
 
 function error() {
     console.log("Unable to retrieve your location");;
@@ -179,6 +196,7 @@ function addLayers() {
 }
 
 map.on('load', function () {
+    // navigator.geolocation.getCurrentPosition(success, error);
 	// add layers from firebase
     map.addLayer({
         "id": "all-points",
@@ -261,7 +279,8 @@ map.on('load', function () {
 		map.getCanvas().style.cursor = '';
 	    // popup.remove();
 	  });
-    
+});
+
     document.getElementById('getbars').addEventListener('click', function() {
         if (map.getLayer('markers')) {
             map.removeLayer('markers');
@@ -275,7 +294,14 @@ map.on('load', function () {
     document.getElementById('zoomto').addEventListener('click', function() {
         getPoints(zoomToFS);
     });
-});
+
+    document.getElementById('getloc').addEventListener('click', function() {
+        // locate the user and then get the FS venues
+        geoLocator._onClickGeolocate(function () {
+            // updatePosition();
+        });
+        updatePosition();
+    });
 
 var dbRef = firebase.database().ref().child('features');
 
@@ -306,11 +332,19 @@ function getPoints(callback) {
 }
 
 function updatePosition() {
-    var coords = map.getCenter();
-    var center = coords.toArray();
-    var arr = turf.point(center);
-    var feature = arr;
-    dbRef.push([feature]);
+    navigator.geolocation.getCurrentPosition(function (position) {
+        var coords = [];
+        var longitude = position.coords.longitude;
+        var latitude = position.coords.latitude;
+        coords.push(longitude);
+        coords.push(latitude);
+        console.log(coords);
+        var arr = turf.point(coords);
+        var feature = arr;
+        dbRef.push([feature]);
+    });
+    
+
 }
 
 function zoomToFS(allPoints) {
@@ -318,6 +352,7 @@ function zoomToFS(allPoints) {
     var bbox = turf.bbox(fc);
     map.fitBounds(bbox);
 };
+
 
 </script>
 
