@@ -64,8 +64,6 @@ var geoLocator = new mapboxgl.GeolocateControl({
     trackUserLocation: true
 });
 
-var x = document.getElementById("demo");
-
 navigator.geolocation.getCurrentPosition(success, error);
 
 function success () {
@@ -125,20 +123,6 @@ function updatePosition() {
     console.log(feature);
     dbRef.push([feature]);
     window.open("https://geografa.github.io/pdxboom/letsmeet.html");
-}
-
-// set the point markers
-function setAllPoints(allPoints) {
-    var pts = turf.featureCollection(allPoints);
-    map.getSource('single-point').setData(pts);
-};
-
-// call firebase to collect points
-function getPoints(callback) {
-    dbRef.on('child_added', function(snapshot) {
-        var allPoints = snapshot.val();
-        callback(allPoints);
-    });
 }
 
 </script>
