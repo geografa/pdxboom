@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title>Set your location</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.0/mapbox-gl.css' rel='stylesheet' />
+    <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.2.0/mapbox-gl-geocoder.min.js'></script>
+<link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.2.0/mapbox-gl-geocoder.css' type='text/css' />
+    <script src='https://npmcdn.com/@turf/turf/turf.min.js'></script>
+    <script src="https://www.gstatic.com/firebasejs/4.9.1/firebase.js"></script>
+    <style>
+        body { margin:0; padding:0; }
+        #map { position:absolute; top:0; bottom:0; width:100%; }
+    </style>
+</head>
+<body>
+
+<script>
+  // Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyCHXst0VonXAtT1uGKEVFZOvYYkw1oae2E",
+    authDomain: "pickup-97212.firebaseapp.com",
+    databaseURL: "https://pickup-97212.firebaseio.com",
+    projectId: "pickup-97212",
+    storageBucket: "",
+    messagingSenderId: "860327677665"
+  };
+  firebase.initializeApp(config);
+</script>
+
+<div id='map'></div>
+
+<script>
+mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JhZmEiLCJhIjoiY2plbG01aDR1MGRmdDJ3a2hyampoZGQzeSJ9.d4TmB98WL1tY4n-IwcYBuw';
+var map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/grafa/cjellxna43ktq2sn71059ot1f',
+    center: [-122.67773866653444,45.52245801087795],
+    zoom: 13
+});
+
+var geoLocator = new mapboxgl.GeolocateControl({
+    positionOptions: {
+        enableHighAccuracy: true
+    },
+    trackUserLocation: true
+});
+
+navigator.geolocation.getCurrentPosition(success, error);
+
+function success () {
+    geoLocator._onClickGeolocate(alert('Use your phone\'s position or center the maps on a new location. Then click "Let\'s go!"'))
+    updatePosition();
+}
+
+function error() {
+    console.log("Unable to retrieve your location");;
+}
+
+map.addControl(geoLocator);
+
+// After the map style has loaded on the page, add a source layer and default
+// styling for a single point.
+
+var popup = new mapboxgl.Popup();
+
+map.on('load', function() {
+    map.addLayer({
+        "id": "single-point",
+        "source": {
+            "type": "geojson",
+            "data": {
+                "type": "FeatureCollection",
+                "features": []
+            }
+        },
+        "type": "symbol",
+        "layout": {
+            "icon-image": "beer",
+            "icon-size": 0.5
+        }
+    });
+});
+
+var dbRef = firebase.database().ref().child('features');
+
+function updatePosition() {
+    var coords = map.getCenter();
+    var center = coords.toArray();
+    var arr = turf.point(center);
+    console.log(arr);
+    var feature = arr;
+    // console.log(feature);
+    // getPoints(setAllPoints);
+    console.log(feature);
+    dbRef.push([feature]);
+}
+
+// set the point markers
+function setAllPoints(allPoints) {
+    var pts = turf.featureCollection(allPoints);
+    map.getSource('single-point').setData(pts);
+};
+
+// call firebase to collect points
+function getPoints(callback) {
+    dbRef.on('child_added', function(snapshot) {
+        var allPoints = snapshot.val();
+        callback(allPoints);
+    });
+}
+
+</script>
+
+</body>
+</html>

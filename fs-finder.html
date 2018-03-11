@@ -1,0 +1,327 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset='utf-8' />
+	<title>Foursquare Pubs</title>
+	<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+	<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.0/mapbox-gl.js'></script>
+	<link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.0/mapbox-gl.css' rel='stylesheet' />
+	<script src='https://npmcdn.com/@turf/turf/turf.min.js'></script>
+	<style>
+	body { margin:0; padding:0; }
+	#map { position:absolute; top:0; bottom:0; width:100%; }
+	.mapboxgl-popup-content{background-color: #2676A5; color: #fff;}
+	.mapboxgl-popup-content a {color: #fff;}
+	.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {border-top-color: #2676A5;}
+	</style>
+</head>
+<body>
+<style>
+.btn-left {
+    font: bold 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+    background-color: #3386c0;
+    color: #fff;
+    position: absolute;
+    top: 20px;
+    left: 10px;
+    z-index: 1;
+    border: none;
+    width: 200px;
+    display: block;
+    cursor: pointer;
+    padding: 10px 20px;
+    border-radius: 3px;
+}
+
+.btn-right {
+    font: bold 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+    background-color: #3386c0;
+    color: #fff;
+    position: absolute;
+    top: 80px;
+    left: 10px;
+    z-index: 1;
+    border: none;
+    width: 200px;
+    display: block;
+    cursor: pointer;
+    padding: 10px 20px;
+    border-radius: 3px;
+}
+
+.btn-control:hover {
+    background-color: #4ea0da;
+}
+</style>
+<div id='map'></div>
+<button id='getbars' class='btn-right'>Get Bars</nav>
+<button id='zoomto' class='btn-left'>See friends</nav>
+
+<!-- jQuery is required for this example. -->
+<script src='https://code.jquery.com/jquery-1.11.0.min.js'></script>
+<!-- and so is firebase -->
+<script src="https://www.gstatic.com/firebasejs/4.9.1/firebase.js"></script>
+<script>
+// Initialize Firebase
+var config = {
+	apiKey: "AIzaSyCHXst0VonXAtT1uGKEVFZOvYYkw1oae2E",
+	authDomain: "pickup-97212.firebaseapp.com",
+	databaseURL: "https://pickup-97212.firebaseio.com",
+	projectId: "pickup-97212",
+	storageBucket: "",
+	messagingSenderId: "860327677665"
+};
+firebase.initializeApp(config);
+</script>
+<script>
+mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JhZmEiLCJhIjoiY2oxbnJkOHlpMDB2eTJ3a2EyaW8zYTg3NyJ9.KpattAxL6iFzfpxt5rFrVw';
+var map = new mapboxgl.Map({
+	container: 'map',
+	style: 'mapbox://styles/grafa/cjelpx5o33ohe2so4xjefaisv',
+	center: [-122.67773866653444,45.52245801087795],
+	zoom: 10
+});
+
+var geoLocator = new mapboxgl.GeolocateControl({
+    positionOptions: {
+        enableHighAccuracy: true
+    },
+    trackUserLocation: true
+});
+
+navigator.geolocation.getCurrentPosition(success, error);
+
+function success () {
+    // locate the user and then get the FS venues
+    geoLocator._onClickGeolocate(updatePosition());
+}
+
+function error() {
+    console.log("Unable to retrieve your location");;
+}
+
+map.addControl(geoLocator);
+
+// Create a Foursquare developer account: https://developer.foursquare.com/
+// NOTE: CHANGE THESE VALUES TO YOUR OWN:
+// Otherwise they can be cycled or deactivated with zero notice.
+var CLIENT_ID = 'XNQ0MRVNNZBHZYQ3B2YVVC0KLWG03P1J3W45M1EHLEDU4BIS';
+var CLIENT_SECRET = 'UVMW41TUNZJSRSITT22NVQACYEXTOT4EY0V2O4AA12OWX1A5';
+
+// https://developer.foursquare.com/start/search
+var API_ENDPOINT = 'https://api.foursquare.com/v2/venues/search' +
+'?client_id=CLIENT_ID' +
+'&client_secret=CLIENT_SECRET' +
+'&v=20170801' +
+'&ll=LATLON' +
+'&categoryId=4bf58dd8d48988d116941735' + // https://developer.foursquare.com/docs/resources/categories
+'&limit=50' +
+'&radius=500' +
+'&callback=?';
+
+var pubs = [];
+
+// Use jQuery to make an AJAX request to Foursquare to load markers data.
+function getFSLocations () {
+	$.getJSON(API_ENDPOINT
+		.replace('CLIENT_ID', CLIENT_ID)
+		.replace('CLIENT_SECRET', CLIENT_SECRET)
+		.replace('LATLON', map.getCenter().lat +
+			',' + map.getCenter().lng), function(result, status) {
+
+			if (status !== 'success') return alert('Request to Foursquare failed');
+
+        // Transform each venue result into a marker on the map.
+        pubs = [];
+        for (var i = 0; i < result.response.venues.length; i++) {
+        	var venue = result.response.venues[i],
+        	lng = parseFloat(venue.location.lng),
+        	lat = parseFloat(venue.location.lat);
+        	venue.lnglat = [lng,lat];
+        	pubs.push({
+        		"type": "Feature",
+        		"geometry": {
+        			"type": "Point",
+        			"coordinates": venue.lnglat
+        		},
+        		"properties": {
+        			"title": venue.name,
+        			"address": venue.location.address,
+        			"url": venue.url,
+                        // "photos": venue.photos.items,
+                        "venuepage": venue.venuePage,
+                      }
+                    });
+        }
+        addLayers();
+      });
+}
+
+function addLayers() {
+	map.addLayer({
+		"id": "markers",
+		"interactive": true,
+		"type": "symbol",
+		"source": {
+			"type": "geojson",
+			"data": {
+				"type": "FeatureCollection",
+				"features": pubs
+			},
+		},
+        "layout": {
+        	"icon-image": "beer",
+        	"icon-allow-overlap": true,
+        	"icon-size": 0.25
+        }
+      });
+}
+
+map.on('load', function () {
+	// add layers from firebase
+    map.addLayer({
+        "id": "all-points",
+        "source": {
+            "type": "geojson",
+            "data": {
+                "type": "FeatureCollection",
+                "features": []
+            }
+        },
+        "type": "symbol",
+        "layout": {
+            "icon-image": "dot-cyan",
+            "icon-size": 1
+        },
+        "paint": {
+            "icon-opacity": 0.7
+        }
+    })
+
+    map.addLayer({
+        "id": "center-point",
+        "source": {
+            "type": "geojson",
+            "data": {
+                "type": "FeatureCollection",
+                "features": []
+            }
+        },
+        "type": "symbol",
+        "layout": {
+            "icon-image": "circle-15",
+            "icon-size": 1,
+            "icon-allow-overlap": true
+        }
+    })
+
+    getPoints(setAllPoints);
+    getPoints(setCenter);
+    getPoints(zoomToFS);
+
+	// Create a popup, but don't add it to the map yet.
+	// Create a popup, but don't add it to the map yet.
+	var markerHeight = 10;
+	var popupOffsets = {
+	   'bottom': [0, -markerHeight]
+	};
+
+	var popup = new mapboxgl.Popup({
+    	closeButton: true,
+    	closeOnClick: false,
+    	offset:popupOffsets
+	});
+
+	map.on('click', 'markers', function(e) {
+    	// Change the cursor style as a UI indicator.
+    	map.getCanvas().style.cursor = 'pointer';
+
+    	if (e.features[0].properties.url) {
+    		var url = e.features[0].properties.url;
+    	} else{
+    		var url = '#'
+    	};
+
+    	if (e.features[0].properties.address) {
+    		var address = e.features[0].properties.address;
+    	} else{
+    		var address = ''
+    	};
+    	// Populate the popup and set its coordinates
+    	// based on the feature found.
+    	popup.setLngLat(e.features[0].geometry.coordinates)
+    	.setHTML('<a href="' + url + '" target="_blank">' + e.features[0].properties.title + '</a><br>' + address)
+    	.addTo(map);
+	});
+
+	map.on('mouseenter', 'markers', function () {
+		map.getCanvas().style.cursor = 'pointer';
+	});
+
+	map.on('mouseleave', 'markers', function() {
+		map.getCanvas().style.cursor = '';
+	    // popup.remove();
+	  });
+    
+    document.getElementById('getbars').addEventListener('click', function() {
+        if (map.getLayer('markers')) {
+            map.removeLayer('markers');
+            map.removeSource('markers');
+            getFSLocations();
+        } else{
+            getFSLocations();
+        };
+    });
+
+    document.getElementById('zoomto').addEventListener('click', function() {
+        getPoints(zoomToFS);
+    });
+});
+
+var dbRef = firebase.database().ref().child('features');
+
+// set the point markers
+function setCenter(allPoints) {
+    var fc = turf.featureCollection(allPoints);
+    var center = turf.center(fc);
+    map.getSource('center-point').setData(center);
+};
+
+// set the point markers
+function setAllPoints(allPoints) {
+    var fc = turf.featureCollection(allPoints);
+    map.getSource('all-points').setData(fc);
+};
+
+// call firebase to collect points
+function getPoints(callback) {
+    var allPoints = [];
+    dbRef.on('value', function (snapshot) {
+        snapshot.forEach(function(childSnapshot) {
+            // childData will be the actual contents of the child
+            var pts = childSnapshot.val();
+            allPoints.push(pts[0])
+        });
+        callback(allPoints);
+    });
+}
+
+function updatePosition() {
+    var coords = map.getCenter();
+    var center = coords.toArray();
+    var arr = turf.point(center);
+    var feature = arr;
+    dbRef.push([feature]);
+}
+
+function zoomToFS(allPoints) {
+    var fc = turf.featureCollection(allPoints);
+    var bbox = turf.bbox(fc);
+    map.fitBounds(bbox);
+};
+
+</script>
+
+</body>
+</html>
