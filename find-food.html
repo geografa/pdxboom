@@ -71,6 +71,7 @@
 }
 </style>
 <div id='map'></div>
+<fb:login-button data-auto-logout-link="true" scope="public_profile,email" size="large"></fb:login-button>
 <button id='getbars' class='btn level-1'>Find food</nav>
 <button id='zoomto' class='btn level-2'>See peeps</nav>
 <button id='getloc' class='btn level-3'>Add me</nav>
@@ -79,7 +80,19 @@
 <script src='https://code.jquery.com/jquery-1.11.0.min.js'></script>
 <!-- and so is firebase -->
 <script src="https://www.gstatic.com/firebasejs/4.9.1/firebase.js"></script>
+<!-- <script src="//connect.facebook.net/en_US/sdk.js"></script> -->
 <script>
+
+// FB.init({
+// *********************************************************************
+//  * TODO(Developer): Change the value below with your Facebook app ID. *
+//  *********************************************************************
+// appId      : '146253569362639',
+// status     : true,
+// xfbml      : true,
+// version    : 'v2.12'
+// });
+
 // Initialize Firebase
 var config = {
 	apiKey: "AIzaSyCHXst0VonXAtT1uGKEVFZOvYYkw1oae2E",
@@ -90,12 +103,59 @@ var config = {
 	messagingSenderId: "860327677665"
 };
 firebase.initializeApp(config);
+
+// FB.Event.subscribe('auth.authResponseChange', checkLoginState);
+
+// function checkLoginState(event) {
+//   if (event.authResponse) {
+//     // User is signed-in Facebook.
+//     var unsubscribe = firebase.auth().onAuthStateChanged(function(firebaseUser) {
+//       unsubscribe();
+//       // Check if we are already signed-in Firebase with the correct user.
+//       if (!isUserEqual(event.authResponse, firebaseUser)) {
+//         // Build Firebase credential with the Facebook auth token.
+//         var credential = firebase.auth.FacebookAuthProvider.credential(
+//             event.authResponse.accessToken);
+//         // Sign in with the credential from the Facebook user.
+//         firebase.auth().signInWithCredential(credential).catch(function(error) {
+//           // Handle Errors here.
+//           var errorCode = error.code;
+//           var errorMessage = error.message;
+//           // The email of the user's account used.
+//           var email = error.email;
+//           // The firebase.auth.AuthCredential type that was used.
+//           var credential = error.credential;
+//           // ...
+//         });
+//       } else {
+//         // User is already signed-in Firebase with the correct user.
+//       }
+//     });
+//   } else {
+//     // User is signed-out of Facebook.
+//     firebase.auth().signOut();
+//   }
+// }
+
+// function isUserEqual(facebookAuthResponse, firebaseUser) {
+//   if (firebaseUser) {
+//     var providerData = firebaseUser.providerData;
+//     for (var i = 0; i < providerData.length; i++) {
+//       if (providerData[i].providerId === firebase.auth.FacebookAuthProvider.PROVIDER_ID &&
+//           providerData[i].uid === facebookAuthResponse.userID) {
+//         // We don't need to re-auth the Firebase connection.
+//         return true;
+//       }
+//     }
+//   }
+//   return false;
+// }
 </script>
 <script>
 mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JhZmEiLCJhIjoiY2oxbnJkOHlpMDB2eTJ3a2EyaW8zYTg3NyJ9.KpattAxL6iFzfpxt5rFrVw';
 var map = new mapboxgl.Map({
 	container: 'map',
-    style: 'mapbox://styles/grafa/cjelpx5o33ohe2so4xjefaisv',
+    style: 'mapbox://styles/grafa/cjflu7vtt0a9s2rl8piqyuo23',
 	center: [-122.67773866653444,45.52245801087795],
 	zoom: 10
 });
@@ -188,7 +248,7 @@ function addLayers() {
 			},
 		},
         "layout": {
-        	"icon-image": "pizza",
+        	"icon-image": "restaurant-15",
         	"icon-allow-overlap": true,
         	"icon-size": 0.5
         }
@@ -303,7 +363,7 @@ map.on('load', function () {
         updatePosition();
     });
 
-var dbRef = firebase.database().ref().child('features');
+var dbRef = firebase.database().ref().child('places');
 
 // set the point markers
 function setCenter(allPoints) {
@@ -353,8 +413,6 @@ function zoomToFS(allPoints) {
     map.fitBounds(bbox);
 };
 
-
 </script>
-
 </body>
 </html>
