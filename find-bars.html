@@ -97,7 +97,8 @@ var map = new mapboxgl.Map({
 	container: 'map',
     style: 'mapbox://styles/grafa/cjelpx5o33ohe2so4xjefaisv',
 	center: [-122.67773866653444,45.52245801087795],
-	zoom: 10
+	zoom: 10,
+    pitch: 45
 });
 
 var geoLocator = new mapboxgl.GeolocateControl({
@@ -127,7 +128,7 @@ var API_ENDPOINT = 'https://api.foursquare.com/v2/venues/search' +
 '&ll=LATLON' +
 '&categoryId=4bf58dd8d48988d116941735' + // https://developer.foursquare.com/docs/resources/categories
 '&limit=50' +
-'&radius=500' +
+'&radius=300' +
 '&callback=?';
 
 var pubs = [];
@@ -186,7 +187,21 @@ function addLayers() {
         	"icon-size": 0.25
         }
       });
+    var coordinates = [];
+    for (var i = 0; i < pubs.length; i++) {
+        coordinates.push(pubs[i].geometry.coordinates)
+    };
+
+    // requires wrapping all the coordinates with the extend method.
+    var bounds = coordinates.reduce(function(bounds, coord) {
+        return bounds.extend(coord);
+    }, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
+
+    map.fitBounds(bounds, {
+        padding: 20
+    });
 }
+
 
 map.on('load', function () {
     // navigator.geolocation.getCurrentPosition(success, error);
@@ -223,7 +238,15 @@ map.on('load', function () {
         "layout": {
             "icon-image": "circle-15",
             "icon-size": 1,
-            "icon-allow-overlap": true
+            "icon-allow-overlap": true,
+            "text-field": "center",
+            // "text-font": "center",
+            "text-size": 12,
+            "text-anchor": "bottom-left"
+
+        },
+        "paint": {
+            "text-color": "#fff"
         }
     })
 
@@ -279,8 +302,10 @@ map.on('load', function () {
             map.removeLayer('markers');
             map.removeSource('markers');
             getFSLocations();
+            // map.setPitch(45);
         } else{
             getFSLocations();
+            // map.setPitch(45);
         };
     });
 
@@ -336,8 +361,6 @@ function updatePosition() {
         var feature = arr;
         dbRef.push([feature]);
     });
-    
-
 }
 
 function zoomToFS(allPoints) {
