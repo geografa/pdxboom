@@ -322,7 +322,9 @@ map.on('load', function () {
         updatePosition();
     });
 
-var dbRef = firebase.database().ref().child('bars');
+// best to have auth so in this case, we just rules like ".write": false
+
+var dbRef = firebase.database().ref().child('bars'); 
 
 // set the point markers
 function setCenter(allPoints) {
