@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset='utf-8' />
+	<title>Foursquare Pubs</title>
+	<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+	<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.49.0/mapbox-gl.js'></script>
+	<link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.49.0/mapbox-gl.css' rel='stylesheet' />
+	<style>
+	body { margin:0; padding:0; }
+	#map { position:absolute; top:0; bottom:0; width:100%; }
+	.mapboxgl-popup-content{background-color: #c3a660; color: #fff; text-align: center;}
+	.mapboxgl-popup-content h2 {margin-top: 0;}
+	.mapboxgl-popup-content a {color: #fff;}
+	.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {border-top-color: #c3a660;}
+	.mapboxgl-popup-anchor-top .mapboxgl-popup-tip {border-bottom-color: #c3a660;}
+	.mapboxgl-popup-anchor-left .mapboxgl-popup-tip {border-right-color: #c3a660;}
+	.mapboxgl-popup-anchor-right .mapboxgl-popup-tip {border-left-color: #c3a660;}
+	.mapboxgl-popup-content img {padding-left: 10px;}
+	</style>
+</head>
+<body>
+<style>
+.btn-left {
+    font: bold 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+    background-color: #3386c0;
+    color: #fff;
+    position: absolute;
+    top: 20px;
+    left: 10px;
+    z-index: 1;
+    border: none;
+    width: 200px;
+    display: block;
+    cursor: pointer;
+    padding: 10px 20px;
+    border-radius: 3px;
+}
+
+.btn-right {
+    font: bold 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+    background-color: #3386c0;
+    color: #fff;
+    position: absolute;
+    top: 12px;
+    left: 10px;
+    z-index: 1;
+    border: none;
+    width: 200px;
+    display: block;
+    cursor: pointer;
+    padding: 10px 20px;
+    border-radius: 3px;
+}
+
+.btn-control:hover {
+    background-color: #4ea0da;
+}
+</style>
+<div id='map'></div>
+<button id='getbars' class='btn-right'>Get Bars</nav>
+
+<!-- jQuery is required for this example. -->
+<script src='https://code.jquery.com/jquery-1.11.0.min.js'></script>
+
+<script>
+mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JhZmEiLCJhIjoiY2oxbnJkOHlpMDB2eTJ3a2EyaW8zYTg3NyJ9.KpattAxL6iFzfpxt5rFrVw';
+var map = new mapboxgl.Map({
+	container: 'map',
+	style: 'mapbox://styles/grafa/cjelpx5o33ohe2so4xjefaisv',
+	center: [-122.67773866653444,45.52245801087795],
+	zoom: 10,
+	hash:true
+});
+
+// Create a Foursquare developer account: https://developer.foursquare.com/
+// NOTE: CHANGE THESE VALUES TO YOUR OWN:
+// Otherwise they can be cycled or deactivated with zero notice.
+var CLIENT_ID = 'XNQ0MRVNNZBHZYQ3B2YVVC0KLWG03P1J3W45M1EHLEDU4BIS';
+var CLIENT_SECRET = 'UVMW41TUNZJSRSITT22NVQACYEXTOT4EY0V2O4AA12OWX1A5';
+
+// https://developer.foursquare.com/start/search
+var API_ENDPOINT = 'https://api.foursquare.com/v2/venues/search' +
+'?client_id=CLIENT_ID' +
+'&client_secret=CLIENT_SECRET' +
+'&v=20170801' +
+'&ll=LATLON' +
+'&categoryId=4bf58dd8d48988d116941735' + // https://developer.foursquare.com/docs/resources/categories
+'&limit=50' +
+'&radius=500' +
+'&callback=?';
+
+var pubs = [];
+
+// Use jQuery to make an AJAX request to Foursquare to load markers data.
+function getFSLocations () {
+	$.getJSON(API_ENDPOINT
+		.replace('CLIENT_ID', CLIENT_ID)
+		.replace('CLIENT_SECRET', CLIENT_SECRET)
+		.replace('LATLON', map.getCenter().lat +
+			',' + map.getCenter().lng), function(result, status) {
+
+			if (status !== 'success') return alert('Request to Foursquare failed');
+
+        // Transform each venue result into a marker on the map.
+        pubs = [];
+        for (var i = 0; i < result.response.venues.length; i++) {
+        	var venue = result.response.venues[i],
+        	lng = parseFloat(venue.location.lng),
+        	lat = parseFloat(venue.location.lat);
+        	venue.lnglat = [lng,lat];
+			console.log(venue);
+        	pubs.push({
+        		"type": "Feature",
+        		"geometry": {
+        			"type": "Point",
+        			"coordinates": venue.lnglat
+        		},
+        		"properties": {
+        			"title": venue.name,
+        			"address": venue.location.address,
+        			"url": venue.url,
+					"venuepage": venue.venuePage,
+					"icon": venue.categories[0].icon.prefix + '32' +  venue.categories[0].icon.suffix
+                      }
+                    });
+        }
+        addLayers();
+      });
+}
+
+function addLayers() {
+	map.addLayer({
+		"id": "markers",
+		"interactive": true,
+		"type": "symbol",
+		"source": {
+			"type": "geojson",
+			"data": {
+				"type": "FeatureCollection",
+				"features": pubs
+			},
+		},
+        "layout": {
+			"icon-image": "beer",
+        	"icon-allow-overlap": true,
+        	"icon-size": 0.5
+        }
+      });
+}
+
+// Create a popup, but don't add it to the map yet.
+var markerHeight = 20, markerRadius = 10, linearOffset = 25;
+var popupOffsets = {
+	'bottom': [0, -markerHeight],
+	'top': [0, markerHeight],
+	'left': [markerRadius, (markerHeight - markerRadius) * -1],
+	'right': [-markerRadius, (markerHeight - markerRadius) * -1]
+
+};
+
+var popup = new mapboxgl.Popup({
+	closeButton: true,
+	closeOnClick: true,
+	offset:popupOffsets
+});
+
+
+map.on('load', function () {
+	map.on('click', 'markers', function(e) {
+    	// Change the cursor style as a UI indicator.
+    	map.getCanvas().style.cursor = 'pointer';
+
+    	if (e.features[0].properties.url) {
+    		var url = e.features[0].properties.url;
+    	} else{
+    		var url = '#'
+    	};
+		console.log(url);
+    	if (e.features[0].properties.address) {
+    		var address = e.features[0].properties.address;
+    	} else{
+    		var address = ''
+    	};
+    	// Populate the popup and set its coordinates
+    	// based on the feature found.
+    	popup.setLngLat(e.features[0].geometry.coordinates)
+    	.setHTML('<img src=' + e.features[0].properties.icon + 
+		' /><h2><a href="https://foursquare.com/explore?q=' + e.features[0].properties.title + 
+		'" target="_blank">' + e.features[0].properties.title + '</a></h2>' + address + 
+		'<br><a href="#" onclick="getLocation(getRoute)">Directions</a>')
+    	.addTo(map);
+	});
+
+	map.on('mouseenter', 'markers', function () {
+		map.getCanvas().style.cursor = 'pointer';
+	});
+
+	map.on('mouseleave', 'markers', function() {
+		map.getCanvas().style.cursor = '';
+	    // popup.remove();
+	  });
+    
+    document.getElementById('getbars').addEventListener('click', function() {
+        if (map.getLayer('markers')) {
+            map.removeLayer('markers');
+            map.removeSource('markers');
+            getFSLocations();
+        } else{
+            getFSLocations();
+        };
+    });
+});
+const getLocation = (callback) => {
+	navigator.geolocation.getCurrentPosition(function(position) {
+		var start = position.coords.longitude + ',' + position.coords.latitude;
+		callback(start);
+	});
+};
+
+const getRoute = (start,dest) => {
+	var dest = popup.getLngLat();
+	var url = 'https://api.mapbox.com/directions/v5/mapbox/driving-traffic/' + start + ';' + dest.lng + ',' + dest.lat +
+	'?geometries=geojson&overview=full&access_token=pk.eyJ1IjoiZ3JhZmEiLCJhIjoiY2pjeG40N3cyMTZ6ajMzbzUwNHFleWRsMiJ9.n1yXQ4YMRi9ylrhaeah5dA';
+	var req = new XMLHttpRequest();
+	req.responseType = 'json';
+	req.open('GET', url, true);
+	req.onload  = function() {
+		var data = req.response.routes[0];
+		var route = data.geometry.coordinates;
+		var geojson = {
+			"type": "Feature",
+			"properties": {},
+			"geometry": {
+				"type": "LineString",
+				"coordinates": route
+			}
+			};
+		if (map.getSource('route')) {
+			map.getSource('route').setData(geojson);
+			map.getSource('route-casing').setData(geojson);
+		} else {
+			map.addLayer({
+				"id": "route",
+				"type": "line",
+				"source": {
+				"type": "geojson",
+				"data": {
+					"type": "Feature",
+					"properties": {},
+					"geometry": {
+					"type": "LineString",
+					"coordinates": route
+					}
+				}
+
+				},
+				"layout": {
+					"line-join": "round",
+					"line-cap": "round"
+				},
+				"paint": {
+					"line-color": "#1dff00",
+					"line-width": 1.5,
+					"line-opacity": 0.75
+				}
+			}, 'water-label');
+			map.addLayer({
+				"id": "route-casing",
+				"type": "line",
+				"source": {
+					"type": "geojson",
+					"data": {
+						"type": "Feature",
+						"properties": {},
+						"geometry": {
+						"type": "LineString",
+						"coordinates": route
+					}
+				}
+
+				},
+				"layout": {
+					"line-join": "round",
+					"line-cap": "round"
+				},
+				"paint": {
+					"line-color": "#1dff00",
+					"line-width": 10,
+					"line-opacity": 0.5,
+					"line-blur": 3
+				}
+			}, 'water-label');
+		};
+		
+		var coordinates = geojson.geometry.coordinates;
+
+		// Pass the first coordinates in the LineString to `lngLatBounds` &
+		// wrap each coordinate pair in `extend` to include them in the bounds
+		// result. A variation of this technique could be applied to zooming
+		// to the bounds of multiple Points or Polygon geomteries - it just
+		// requires wrapping all the coordinates with the extend method.
+		var bounds = coordinates.reduce(function(bounds, coord) {
+			return bounds.extend(coord);
+		}, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
+
+		map.fitBounds(bounds, {
+			padding: 20
+		});
+
+		var home = JSON.parse("[" + start + "]");
+		popup.setLngLat(home)
+		.setHTML('<span class="duration">' + Math.floor(data.duration/60) + ' min 🚗💨</span>');
+		popup.addTo(map);
+	};
+	req.send();
+};
+
+</script>
+
+</body>
+</html>
