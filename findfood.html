@@ -42,7 +42,7 @@
     background-color: #fff;
     color: #333;
     position: absolute;
-    top: 12px;
+    top: 10px;
     left: 10px;
     z-index: 1;
     border: none;
@@ -64,7 +64,7 @@
 <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.3.0/mapbox-gl-geocoder.css' type='text/css' />
 
 <div id='map'></div>
-<button id='getbars' class='btn-right'><img src="restaurant-15.svg"></nav>
+<button id='getFood' class='btn-right'><img src="restaurant-15.svg"></nav>
 
 <!-- jQuery is required for this example. -->
 <script src='https://code.jquery.com/jquery-1.11.0.min.js'></script>
@@ -186,7 +186,7 @@ var popup = new mapboxgl.Popup({
 
 
 map.on('load', function () {
-	map.on('click', 'markers', function(e) {
+	map.on('mouseover', 'markers', function(e) {
     	// Change the cursor style as a UI indicator.
     	map.getCanvas().style.cursor = 'pointer';
 
@@ -219,7 +219,7 @@ map.on('load', function () {
 	    // popup.remove();
 	  });
     
-    document.getElementById('getbars').addEventListener('click', function() {
+    document.getElementById('getFood').addEventListener('click', function() {
         if (map.getLayer('markers')) {
             map.removeLayer('markers');
             map.removeSource('markers');
