@@ -42,7 +42,7 @@
     background-color: #fff;
     color: #333;
     position: absolute;
-    top: 12px;
+    top: 10px;
     left: 10px;
     z-index: 1;
     border: none;
@@ -187,7 +187,7 @@ var popup = new mapboxgl.Popup({
 
 
 map.on('load', function () {
-	map.on('click', 'markers', function(e) {
+	map.on('mouseover', 'markers', function(e) {
     	// Change the cursor style as a UI indicator.
     	map.getCanvas().style.cursor = 'pointer';
 
